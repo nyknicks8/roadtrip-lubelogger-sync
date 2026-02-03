@@ -163,7 +163,7 @@ func setupSecrets() (string, string) {
 			Authorization string
 		}
 
-		configFileName := fmt.Sprintf("%s/.local/rt2ll/rt2ll.json", os.Getenv("HOME"))
+		configFileName := `C:\Users\TestPC\.local\rt2ll\rt2ll.json`
 		configFile, err := os.Open(configFileName)
 		if err != nil {
 			logger.Error("Error reading config file",
@@ -240,7 +240,15 @@ func main() {
 
 	for _, v := range vehicles {
 		filename := v.CSVFilename()
-
+        if filename == "" {
+			for _, ef := range v.ExtraFields {
+				if ef.Name == "CSVFilename" || ef.Name == "filename" {
+					filename = ef.Value
+					logger.Info("Using filename from extra field", "field", ef.Name, "value", filename)
+					break
+				}
+			}
+		}
 		logger.Info("Evaluating lubelogger vehicle",
 			"id", v.ID,
 			"year", v.Year,
