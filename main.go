@@ -18,6 +18,15 @@ var (
 	logger   *slog.Logger
 	logLevel *slog.LevelVar
 )
+var (
+    configPath string
+	csvPath    string
+)
+
+var (
+    roadtripCSVPath = flag.String("csvpath", "./testdata/CSV", "Location of Road Trip CSV files")
+    debugMode       = flag.Bool("v", false, "Verbose logging")
+)
 
 func rtfComparator(f roadtrip.FuelRecord) string {
 	return fmt.Sprintf("%07d", int64(f.Odometer))
@@ -159,26 +168,17 @@ func setupSecrets() (string, string) {
 		logger.Warn("Missing API_URI or AUTHORIZATION environment variables")
 
 		type Config struct {
-			ApiURI        string
-			Authorization string
+			ApiURI        string `json:"ApiURI"`
+			Authorization string `json:"Authorization"`
 		}
 
-		configFileName := `C:\Users\TestPC\.local\rt2ll\rt2ll.json`
+    // Use flag value if provided, otherwise fallback
+		configFileName := configPath
+		if configFileName == "" {
+			configFileName = `C:\Users\TestPC\.local\rt2ll\rt2ll.json`
+		}
 		configFile, err := os.Open(configFileName)
-		if err != nil {
-			logger.Error("Error reading config file",
-				"filename", configFileName,
-				"error", err,
-			)
-			os.Exit(1)
-		}
-
-		defer configFile.Close()
-
-		decoder := json.NewDecoder(configFile)
-		c := Config{}
-
-		err = decoder.Decode(&c)
+		logger.Info("Loading config from", "path", configFileName)
 		if err != nil {
 			logger.Error("Error decoding config file",
 				"filename", configFileName,
@@ -186,6 +186,13 @@ func setupSecrets() (string, string) {
 			)
 			os.Exit(1)
 		}
+		defer configFile.Close()
+
+		decoder := json.NewDecoder(configFile)
+		c := Config{}
+
+		err = decoder.Decode(&c)
+
 
 		fmt.Printf("c: %+v\n", c)
 
@@ -202,11 +209,12 @@ func setupSecrets() (string, string) {
 }
 
 func main() {
-	var (
+	flag.StringVar(&configPath, "config", "", "Path to rt2ll config file")
+    flag.Parse()
+/* 	var (
 		roadtripCSVPath = flag.String("csvpath", "./testdata/CSV", "Location of Road Trip CSV files")
 		debugMode       = flag.Bool("v", false, "Verbose logging")
-	)
-
+	) */
 	setupLogs()
 	flag.Parse()
 
