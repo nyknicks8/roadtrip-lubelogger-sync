@@ -33,7 +33,6 @@ func Vehicles() ([]Vehicle, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	err = json.Unmarshal(body, &response)
 	if err != nil {
 		return nil, fmt.Errorf("unmarshalling json: %w", err)
@@ -51,7 +50,6 @@ func GasRecords(vehicleID int) (VehicleGasRecords, error) {
 	if err != nil {
 		return VehicleGasRecords{}, err
 	}
-
 	err = json.Unmarshal(body, &response.Records)
 	if err != nil {
 		return VehicleGasRecords{}, fmt.Errorf("unmarshalling json: %w", err)
@@ -65,7 +63,7 @@ func GasRecords(vehicleID int) (VehicleGasRecords, error) {
 	return response, nil
 }
 
-func AddGasRecord(vehicleID int, gr GasRecord) (PostResponse, error) {
+	func AddGasRecord(vehicleID int, gr GasRecord) (PostResponse, error) {
 	requestBody := gr.URLValues()
 
 	logger.Debug("AddRecord()",
