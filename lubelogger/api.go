@@ -35,7 +35,7 @@ func GetEndpointWithContext(ctx context.Context, endpoint string) (*http.Respons
 		return nil, fmt.Errorf("GetEndpointWithContext NewRequest: %w", err)
 	}
 
-	apiRequest.Header.Add("Authorization", authorizationHeader())
+	apiRequest.Header.Add("x-api-key", authorizationHeader())
 
 	apiResponse, err := http.DefaultClient.Do(apiRequest)
 	if err != nil {
@@ -114,9 +114,46 @@ func PostFormEndpointWithContext(ctx context.Context, endpoint string, data url.
 
 	return apiResponse, err
 }
+func APIPostForm(endpoint string, values url.Values) (PostResponse, error) {
+    fullURL := apiURI + "/" + endpoint  // assuming apiURI is package var
 
+    req, err := http.NewRequest("POST", fullURL, strings.NewReader(values.Encode()))
+    if err != nil {
+        return PostResponse{}, err
+    }
+
+    req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+    req.Header.Set("x-api-key", authorization)  // use your auth header
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        return PostResponse{}, err
+    }
+    defer resp.Body.Close()
+
+    bodyBytes, err := io.ReadAll(resp.Body)
+    if err != nil {
+        return PostResponse{}, fmt.Errorf("failed to read response body: %w", err)
+    }
+
+    if len(bodyBytes) == 0 {
+        if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusCreated {
+            logger.Info("POST to %s succeeded with empty response body", endpoint)
+            return PostResponse{Success: true}, nil  // adjust if needed
+        }
+        return PostResponse{}, fmt.Errorf("empty response from %s with status %d", endpoint, resp.StatusCode)
+    }
+
+    var postResp PostResponse
+    if err := json.Unmarshal(bodyBytes, &postResp); err != nil {
+        return PostResponse{}, fmt.Errorf("unmarshalling json: %w (body: %s)", err, string(bodyBytes))
+    }
+
+    return postResp, nil
+}
 // Wrapped PostForm for standardized call of API POST endpoints.
-func APIPostForm(endpoint string, data url.Values) (PostResponse, error) {
+/* func APIPostForm(endpoint string, data url.Values) (PostResponse, error) {
 	var response PostResponse
 
 	ctx := context.Background()
@@ -150,4 +187,4 @@ func APIPostForm(endpoint string, data url.Values) (PostResponse, error) {
 	}
 
 	return response, nil
-}
+} */
